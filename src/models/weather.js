@@ -35,33 +35,27 @@ const weatherSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-//Pre-save Hook for create
-weatherSchema.pre("save", (next, options) => {
-  const doc = this;
-
-  //options.ip must be passed from controller / handler
-  if (doc.isNew) {
-    if (options?.ip) {
-      doc.createdByIp = options.ip;
-      const geo = geoip.lookup(options.ip) || {};
-      doc.createdByLocation = {
-        city: geo.city || "",
-        state: geo.region || "",
-        country: geo.country || "",
-        latitude: geo.ll ? geo.ll[0] : null,
-        longitude: geo.ll ? geo.ll[1] : null,
-      };
-    }
+// Pre-save hook
+weatherSchema.pre("save", function (next, options) {
+  if (this.isNew && options?.ip) {
+    this.createdByIp = options.ip;
+    const geo = geoip.lookup(options.ip) || {};
+    this.createdByLocation = {
+      city: geo.city || "",
+      state: geo.region || "",
+      country: geo.country || "",
+      latitude: geo.ll ? geo.ll[0] : null,
+      longitude: geo.ll ? geo.ll[1] : null,
+    };
   }
   next();
 });
 
-//Pre-save Hook for update
-weatherSchema.pre("findOneAndUpdate", (next) => {
+// Pre-update hook
+weatherSchema.pre("findOneAndUpdate", function (next) {
   const update = this.getUpdate();
   const options = this.getOptions();
 
-  //options.ip must be passed from controller / handler
   if (options.ip) {
     update.updatedByIp = options.ip;
     const geo = geoip.lookup(options.ip) || {};
@@ -73,9 +67,9 @@ weatherSchema.pre("findOneAndUpdate", (next) => {
       longitude: geo.ll ? geo.ll[1] : null,
     };
   }
-  this.setUpdate(update);
 
+  this.setUpdate(update);
   next();
 });
 
-module.exports = mongoose.model("Weather", weatherSchema);
+export default mongoose.model("Weather", weatherSchema);

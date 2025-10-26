@@ -41,4 +41,5 @@ const AuthMiddleWare = (req,res,next) =>{
             stack: error.stack
         });
     }
+    
 }

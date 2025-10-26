@@ -1,47 +1,51 @@
 import express from "express";
-import mongoose from 'mongoose';
-import cors from 'cors';
-import dotenv from 'dotenv';
-import { connect } from "mongoose";
+import mongoose from "mongoose";
+import cors from "cors";
+import dotenv from "dotenv";
 
+// ✅ Use ES Module import for routes (require → import)
+import weatherRoutes from "./src/routes/weather.js";
 
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3100;
 
+// Middleware
 app.use(cors());
 app.use(express.json());
 
-app.get("/", (req,res) =>{
-    res.send("Server Running");
+// Routes
+app.use("/api/weather", weatherRoutes);
+
+// Root route
+app.get("/", (req, res) => {
+  res.send("🌤️ Weather Server Running Successfully!");
 });
 
-const connectDb = async () =>{
-    try{
-        const mongooseUrl = process.env.MONGO_URL;
-        if(!mongooseUrl){
-            throw new Error("NO DB URL Found!");
-            return;
-        }
-        await mongoose.connect(mongooseUrl , {
-            dbName: process.env.DB_NAME, 
-        })
-        console.log("MongoDB Connected = ", process.env.DB_NAME);
-        try{
-            
-            app.listen(port,(req,res) =>{
-                console.log("Server Running on PORT = ",port);
-            })
-        }
-        catch(err){
-            throw new Error("Server Connection Error = ",err);
-        }
+// MongoDB Connection
+const connectDb = async () => {
+  try {
+    const mongooseUrl = process.env.MONGO_URL;
+    if (!mongooseUrl) {
+      throw new Error("❌ No MongoDB URL found in .env!");
     }
-    catch(err){
-        throw new Error("DB Connection Error = " , err);    
-    }
+
+    await mongoose.connect(mongooseUrl, {
+      dbName: process.env.DB_NAME,
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+
+    console.log("✅ MongoDB Connected:", process.env.DB_NAME);
+
+    // Start server after DB connection
+    app.listen(port, () => {
+      console.log(`🚀 Server Running on PORT ${port}`);
+    });
+  } catch (err) {
+    console.error("❌ DB Connection Error:", err.message);
+  }
 };
 
 connectDb();
-
